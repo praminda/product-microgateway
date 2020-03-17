@@ -51,12 +51,8 @@ if NOT EXIST %BALLERINA_HOME% SET BALLERINA_HOME="%MICROGW_HOME%\lib"
 
 SET PATH=%BALLERINA_HOME%\bin\;%PATH%
 
-REM Check JAVA availability
-if EXIST "%JAVA_HOME%" (
-	ECHO JAVA_HOME: %JAVA_HOME%
-) else (
-	SET JAVA_HOME=%MICROGW_HOME%\lib\jdk8u202-b08-jre
-)
+CALL :setJavaHome
+IF %ERRORLEVEL% NEQ 0 GOTO END
 
 SET originalArgs=%*
 if ""%1""=="""" goto usageInfo
@@ -74,7 +70,7 @@ goto setupArgs
 :usageInfo
 	ECHO Missing command operand
 	ECHO "Use: micro-gw (init | import | build | reset)"
-goto :end
+goto :END
 
 :commandBuild
 
@@ -125,7 +121,33 @@ goto :end
                     ECHO. & ECHO BUILD FAILED
                 )
             POPD
-goto :end
+goto :END
+
+REM Set JAVA_HOME
+:setJavaHome
+    REM If java_home is set and version is 1.8 in the running environment,
+    REM pick that as the java_home for MGW. If not set internal jre home
+    IF EXIST "%JAVA_HOME%" (
+        SET JAVA_CMD="%JAVA_HOME%\bin\java.exe"
+        IF NOT EXIST "%JAVA_CMD%" (
+            SET JAVA_HOME=%MICROGW_HOME%\lib\jdk8u202-b08-jre
+            EXIT /B 0
+        )
+        SET JAVA_VERSION=
+        FOR /F "tokens=* USEBACKQ" %%F IN (`%JAVA_CMD% -fullversion 2^>^&1`) DO (
+            SET JAVA_VERSION=%%F
+        )
+
+        REM External java_home was detected, now check if it is java8
+        ECHO "%JAVA_VERSION%"|find "1.8." >NUL
+        IF %ERRORLEVEL% EQU 0 (
+            ECHO JAVA_HOME: %JAVA_HOME%
+            EXIT /B 0 
+        )
+    ) 
+    SET JAVA_HOME=%MICROGW_HOME%\lib\jdk8u202-b08-jre
+
+    EXIT /B 0
 
 :commandDebug
 
@@ -139,8 +161,7 @@ goto passToJar
 
 :noDebugPort
 	ECHO Please specify the debug port after the --java.debug option
-goto end
-
+goto END
 
 :passToJar
 	REM ---------- Add jars to classpath ----------------
@@ -158,7 +179,6 @@ goto end
 			SET CLI_CLASSPATH=!CLI_CLASSPATH!;.\lib\gateway\cli\%%~ni%%~xi
 		)
 	)
-
 
 	SET JAVACMD=-Xms256m -Xmx1024m ^
 		-XX:+HeapDumpOnOutOfMemoryError ^
@@ -181,9 +201,6 @@ goto end
 	"%JAVA_HOME%\bin\java" %JAVACMD% org.wso2.apimgt.gateway.cli.cmd.Main %originalArgs%
 	if ERRORLEVEL 121 goto runJava
 	if ERRORLEVEL 1 (EXIT /B %ERRORLEVEL%)
-:end
-goto endlocal
-
-:endlocal
 
 :END
+    EXIT /B %ERRORLEVEL%
