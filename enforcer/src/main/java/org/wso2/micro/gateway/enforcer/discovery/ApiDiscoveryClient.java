@@ -109,7 +109,8 @@ public class ApiDiscoveryClient {
 
     public void watchApis() {
         // TODO: (Praminda) handle deadline properly with reconnections
-        reqObserver = stub.withDeadlineAfter(60, TimeUnit.SECONDS)
+        // TODO: Use same cache for envoy and API services
+        reqObserver = stub.withDeadlineAfter(6, TimeUnit.HOURS)
                 .streamApis(new StreamObserver<DiscoveryResponse>() {
                     @Override
                     public void onNext(DiscoveryResponse response) {
@@ -118,6 +119,7 @@ public class ApiDiscoveryClient {
                         try {
                             List<Api> apis = handleResponse(response);
                             apiFactory.addApis(apis);
+                            // TODO: (Praminda) fix recursive ack on ack failure
                             ack();
                         } catch (Exception e) {
                             // catching generic error here to wrap any grpc communication errors in the runtime
@@ -128,6 +130,7 @@ public class ApiDiscoveryClient {
                     @Override
                     public void onError(Throwable throwable) {
                         logger.error("Error occurred during API discovery", throwable);
+                        // TODO: if adapter is unavailable keep retrying
                         nack(throwable);
                     }
 

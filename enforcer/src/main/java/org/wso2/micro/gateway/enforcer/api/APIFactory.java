@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.wso2.gateway.discovery.api.Api;
 import org.wso2.micro.gateway.enforcer.api.config.ResourceConfig;
 import org.wso2.micro.gateway.enforcer.constants.APIConstants;
-import org.wso2.micro.gateway.enforcer.constants.Constants;
 import org.wso2.micro.gateway.enforcer.discovery.ApiDiscoveryClient;
 
 import java.util.List;
@@ -40,9 +39,7 @@ public class APIFactory {
     private static APIFactory apiFactory;
     private ConcurrentHashMap<String, API> apis = new ConcurrentHashMap<>();
 
-    private APIFactory() {
-
-    }
+    private APIFactory() {}
 
     public static APIFactory getInstance() {
         if (apiFactory == null) {
@@ -57,20 +54,28 @@ public class APIFactory {
     }
 
     public void addApi(API api) {
-        String apiKey = api.getAPIConfig().getBasePath() + '/' + api.getAPIConfig().getVersion();
+        String apiKey = getApiKey(api);
         apis.put(apiKey, api);
     }
 
     public void addApis(List<Api> apis) {
+        //TODO: (Praminda) Use apiId as the map key. Need to add the apiId to envoy context meta
+        ConcurrentHashMap<String, API> newApis = new ConcurrentHashMap<>();
+
         for (Api api : apis) {
             RestAPI enforcerApi = new RestAPI();
             enforcerApi.init(api);
-            addApi(enforcerApi);
+            String apiKey = getApiKey(enforcerApi);
+            newApis.put(apiKey, enforcerApi);
+            if (logger.isDebugEnabled()) {
+                logger.debug("API {} added to the API Cache", apiKey);
+            }
         }
+        this.apis = newApis;
     }
 
     public void removeApi(API api) {
-        String apiKey = api.getAPIConfig().getBasePath() + '/' + api.getAPIConfig().getVersion();
+        String apiKey = getApiKey(api);
         apis.remove(apiKey);
     }
 
@@ -79,9 +84,6 @@ public class APIFactory {
         String basePath = request.getAttributes().getContextExtensionsMap().get(APIConstants.GW_BASE_PATH_PARAM);
         String version = request.getAttributes().getContextExtensionsMap().get(APIConstants.GW_VERSION_PARAM);
         String apiKey = basePath + '/' + version;
-        if (logger.isDebugEnabled()) {
-            logger.debug("API {} added to the API cache", apiKey);
-        }
         API api = apis.get(apiKey);
         return api;
     }
@@ -92,5 +94,9 @@ public class APIFactory {
                 .filter(resourceConfig -> resourceConfig.getPath().equals(matchedResourcePath)).
                         filter(resourceConfig -> (method == null) || resourceConfig.getMethod()
                                 .equals(ResourceConfig.HttpMethods.valueOf(method))).findFirst().orElse(null);
+    }
+
+    private String getApiKey(API api) {
+        return api.getAPIConfig().getBasePath() + '/' + api.getAPIConfig().getVersion();
     }
 }

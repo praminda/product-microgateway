@@ -20,10 +20,13 @@ package org.wso2.micro.gateway.enforcer.server;
 import io.envoyproxy.envoy.service.auth.v3.CheckRequest;
 import io.envoyproxy.envoy.service.auth.v3.CheckResponse;
 import io.grpc.stub.StreamObserver;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.wso2.micro.gateway.enforcer.api.API;
 import org.wso2.micro.gateway.enforcer.api.APIFactory;
 import org.wso2.micro.gateway.enforcer.api.RequestContext;
 import org.wso2.micro.gateway.enforcer.api.ResponseObject;
+import org.wso2.micro.gateway.enforcer.api.config.APIConfig;
 import org.wso2.micro.gateway.enforcer.api.config.ResourceConfig;
 import org.wso2.micro.gateway.enforcer.constants.APIConstants;
 import org.wso2.micro.gateway.enforcer.constants.AdapterConstants;
@@ -34,9 +37,21 @@ import java.util.Map;
  * This class handles the request coming via the external auth gRPC service.
  */
 public class RequestHandler {
+    private static final Logger logger = LogManager.getLogger(RequestHandler.class);
 
     public ResponseObject process(CheckRequest request, StreamObserver<CheckResponse> responseObserver) {
         API matchedAPI = APIFactory.getInstance().getMatchedAPI(request);
+        if (matchedAPI != null && logger.isDebugEnabled()) {
+            APIConfig api = matchedAPI.getAPIConfig();
+            logger.debug("API {}/{} found in the cache", api.getBasePath(), api.getVersion());
+        }
+
+//        if (matchedAPI == null) {
+//            ResponseObject responseObject = new ResponseObject();
+//            responseObject.setStatusCode(404);
+//            // TODO: (Praminda) set proper error response
+//            return responseObject;
+//        }
         RequestContext requestContext = buildRequestContext(matchedAPI, request);
         return matchedAPI.process(requestContext);
 
