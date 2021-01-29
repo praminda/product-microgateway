@@ -25,6 +25,7 @@ public class Constants {
     public static final String ADAPTER_HOST = "ADAPTER_HOST";
     public static final String ADAPTER_XDS_PORT = "ADAPTER_XDS_PORT";
     public static final String ENFORCER_LABEL = "ENFORCER_LABEL";
+    public static final String XDS_MAX_MSG_SIZE = "XDS_MAX_MSG_SIZE";
     public static final String CONFIG_TYPE_URL = "type.googleapis.com/wso2.discovery.config.enforcer.Config";
     public static final String API_TYPE_URL = "type.googleapis.com/wso2.discovery.api.Api";
     public static final int MAX_XDS_RETRIES = 3;
