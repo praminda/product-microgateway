@@ -34,7 +34,7 @@
     <parent>
         <groupId>org.wso2</groupId>
         <artifactId>wso2</artifactId>
-        <version>1</version>
+        <version>1.2</version>
     </parent>
 
     <modules>
@@ -76,6 +76,45 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build.helper.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <configuration>
+                        <source>8</source>
+                        <detectJavaApiLink>false</detectJavaApiLink>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                            <configuration>
+                                <!--This parameter disables doclint-->
+                                <doclint>none</doclint>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <replaceregexp file="resources/docker-compose.yaml" match="wso2\/mg\-router\:*" replace="wso2/mg-router:${project.version}" byline="true" />
+                                    <replaceregexp file="resources/docker-compose.yaml" match="wso2\/mg\-adapter\:*" replace="wso2/mg-adapter:${project.version}" byline="true" />
+                                    <replaceregexp file="resources/docker-compose.yaml" match="wso2\/mg\-enforcer\:*" replace="wso2/mg-enforcer:${project.version}" byline="true" />
+                                    <replaceregexp file="remove-containers.sh" match="micro_gw_version=*" replace="micro_gw_version=${project.version}" byline="true" />
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

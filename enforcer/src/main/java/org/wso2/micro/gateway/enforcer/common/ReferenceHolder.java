@@ -18,8 +18,6 @@
 
 package org.wso2.micro.gateway.enforcer.common;
 
-import org.apache.commons.lang3.StringUtils;
-import org.wso2.micro.gateway.enforcer.constants.Constants;
 import org.wso2.micro.gateway.enforcer.keymgt.KeyManagerDataService;
 import org.wso2.micro.gateway.enforcer.security.KeyValidator;
 
@@ -34,14 +32,8 @@ public class ReferenceHolder {
 
     private final Map<String, KeyValidator> keyValidationHandlerMap = new ConcurrentHashMap<>();
     private KeyManagerDataService keyManagerDataService;
-    private final String nodeLabel;
-    private final int xdsMaxMsgSize;
 
     private ReferenceHolder() {
-        String envLabel = System.getenv(Constants.ENFORCER_LABEL);
-        String envXdsMax = System.getenv(Constants.XDS_MAX_MSG_SIZE);
-        this.nodeLabel = envLabel == null ? "enforcer" : envLabel;
-        this.xdsMaxMsgSize = !StringUtils.isNumeric(envXdsMax) ? 4194304 : Integer.parseInt(envXdsMax);
     }
 
     public static ReferenceHolder getInstance() {
@@ -64,13 +56,5 @@ public class ReferenceHolder {
 
     public KeyManagerDataService getKeyManagerDataService() {
         return this.keyManagerDataService;
-    }
-
-    public String getNodeLabel() {
-        return nodeLabel;
-    }
-
-    public int getXdsMaxMsgSize() {
-        return xdsMaxMsgSize;
     }
 }
